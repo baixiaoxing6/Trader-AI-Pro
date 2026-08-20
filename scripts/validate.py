@@ -36,6 +36,10 @@ def validate_config() -> None:
     require(config["freqai"].get("enabled") is True, "FreqAI must be enabled")
     require(config["telegram"].get("token", "") == "", "Telegram token must not be committed")
     require(config["telegram"].get("chat_id", "") == "", "Telegram chat id must not be committed")
+    require(
+        not config.get("api_server", {}).get("enabled", False),
+        "API server must remain disabled in signal mode",
+    )
 
     pairs = exchange.get("pair_whitelist", [])
     require(bool(pairs), "pair_whitelist must not be empty")

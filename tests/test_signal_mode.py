@@ -40,6 +40,9 @@ class SignalConfigTests(unittest.TestCase):
         self.assertTrue(self.config["freqai"]["enabled"])
         self.assertEqual(self.config["pairlists"], [{"method": "StaticPairList"}])
 
+    def test_api_server_is_not_enabled(self) -> None:
+        self.assertFalse(self.config.get("api_server", {}).get("enabled", False))
+
 
 class StrategyTests(unittest.TestCase):
     @classmethod

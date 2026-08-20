@@ -141,9 +141,6 @@
     },
     "reload": true
   },
-  "api_server": {
-    "enabled": false
-  },
   "initial_state": "running",
   "force_entry_enable": false,
   "internals": {
