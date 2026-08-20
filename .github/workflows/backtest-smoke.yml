@@ -40,6 +40,9 @@ jobs:
       - name: Pull official FreqAI image
         run: docker compose pull freqtrade-signal
 
+      - name: Prepare writable runtime directories
+        run: chmod -R a+rwX user_data
+
       - name: Build candles from Bybit public futures archives
         run: >-
           docker compose run --rm --no-deps --entrypoint python freqtrade-signal
