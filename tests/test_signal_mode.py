@@ -80,20 +80,22 @@ class SmokeBacktestTests(unittest.TestCase):
         cls.workflow = SMOKE_WORKFLOW_PATH.read_text(encoding="utf-8")
 
     def test_smoke_config_is_small_and_credential_free(self) -> None:
-        self.assertEqual(self.config["exchange"]["pair_whitelist"], ["BTC/USDT:USDT"])
+        self.assertEqual(self.config["exchange"]["pair_whitelist"], ["SOL/USDT:USDT"])
         self.assertNotIn("api_key", self.config["exchange"])
         self.assertNotIn("secret", self.config["exchange"])
-        self.assertEqual(self.config["exchange"]["ccxt_config"]["hostname"], "bytick.com")
-        self.assertEqual(
-            self.config["exchange"]["ccxt_async_config"]["hostname"], "bytick.com"
-        )
+        self.assertEqual(self.config["fee"], 0.0006)
+        self.assertEqual(self.config["futures_funding_rate"], 0.0)
         self.assertFalse(self.config["freqai"]["save_backtest_models"])
         self.assertEqual(self.config["freqai"]["feature_parameters"]["include_corr_pairlist"], [])
 
     def test_smoke_workflow_is_uncached_and_uses_no_secrets(self) -> None:
-        self.assertIn("--cache none", self.workflow)
         self.assertIn("validate_backtest.py", self.workflow)
+        self.assertIn("prepare_bybit_public_data.py", self.workflow)
+        self.assertIn("run_offline_backtest.py", self.workflow)
         self.assertNotIn("secrets.", self.workflow)
+        offline_runner = (ROOT / "scripts/run_offline_backtest.py").read_text(encoding="utf-8")
+        self.assertIn('"--cache"', offline_runner)
+        self.assertIn('"none"', offline_runner)
 
 
 if __name__ == "__main__":

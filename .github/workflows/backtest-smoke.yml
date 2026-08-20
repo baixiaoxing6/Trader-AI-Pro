@@ -40,26 +40,24 @@ jobs:
       - name: Pull official FreqAI image
         run: docker compose pull freqtrade-signal
 
-      - name: Download Bybit futures candles
+      - name: Build candles from Bybit public futures archives
         run: >-
-          docker compose run --rm --no-deps freqtrade-signal
-          download-data
-          --config /freqtrade/user_data/configs/config.signal.json
-          --config /freqtrade/user_data/configs/config.backtest-smoke.json
-          --timeframes 5m 15m
-          --timerange 20260720-20260815
+          docker compose run --rm --no-deps --entrypoint python freqtrade-signal
+          /freqtrade/scripts/prepare_bybit_public_data.py
+          --symbol SOLUSDT
+          --pair SOL/USDT:USDT
+          --start 2021-07-01
+          --end 2021-07-08
 
       - name: Train FreqAI and run smoke backtest
         run: >-
-          docker compose run --rm --no-deps freqtrade-signal
-          backtesting
+          docker compose run --rm --no-deps --entrypoint python freqtrade-signal
+          /freqtrade/scripts/run_offline_backtest.py
           --config /freqtrade/user_data/configs/config.signal.json
           --config /freqtrade/user_data/configs/config.backtest-smoke.json
           --strategy TraderAIProSignalStrategy
           --freqaimodel LightGBMRegressor
-          --timerange 20260801-20260808
-          --export trades
-          --cache none
+          --timerange 20210705-20210707
 
       - name: Validate backtest report
         run: >-
@@ -71,6 +69,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: freqai-smoke-backtest-${{ github.sha }}
-          path: user_data/backtest_results/
+          path: |
+            user_data/backtest_results/
+            user_data/data/bybit/public-source-manifest.json
           if-no-files-found: warn
           retention-days: 14

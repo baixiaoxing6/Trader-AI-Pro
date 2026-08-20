@@ -4,8 +4,9 @@ CONFIG := /freqtrade/user_data/configs/config.signal.json
 SMOKE_CONFIG := /freqtrade/user_data/configs/config.backtest-smoke.json
 STRATEGY := TraderAIProSignalStrategy
 MODEL := LightGBMRegressor
-SMOKE_DATA_TIMERANGE ?= 20260720-20260815
-SMOKE_TIMERANGE ?= 20260801-20260808
+SMOKE_DATA_START ?= 2021-07-01
+SMOKE_DATA_END ?= 2021-07-08
+SMOKE_TIMERANGE ?= 20210705-20210707
 
 .PHONY: validate pull up logs down download-data backtest smoke-backtest
 
@@ -41,18 +42,18 @@ backtest:
 		--timerange $(TIMERANGE)
 
 smoke-backtest: validate pull
-	$(COMPOSE) run --rm --no-deps $(SERVICE) download-data \
-		--config $(CONFIG) \
-		--config $(SMOKE_CONFIG) \
-		--timeframes 5m 15m \
-		--timerange $(SMOKE_DATA_TIMERANGE)
-	$(COMPOSE) run --rm --no-deps $(SERVICE) backtesting \
+	$(COMPOSE) run --rm --no-deps --entrypoint python $(SERVICE) \
+		/freqtrade/scripts/prepare_bybit_public_data.py \
+		--symbol SOLUSDT \
+		--pair SOL/USDT:USDT \
+		--start $(SMOKE_DATA_START) \
+		--end $(SMOKE_DATA_END)
+	$(COMPOSE) run --rm --no-deps --entrypoint python $(SERVICE) \
+		/freqtrade/scripts/run_offline_backtest.py \
 		--config $(CONFIG) \
 		--config $(SMOKE_CONFIG) \
 		--strategy $(STRATEGY) \
 		--freqaimodel $(MODEL) \
-		--timerange $(SMOKE_TIMERANGE) \
-		--export trades \
-		--cache none
+		--timerange $(SMOKE_TIMERANGE)
 	python3 scripts/validate_backtest.py user_data/backtest_results \
 		--strategy $(STRATEGY)

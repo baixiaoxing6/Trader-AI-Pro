@@ -15,6 +15,8 @@ SMOKE_CONFIG_PATH = ROOT / "user_data/configs/config.backtest-smoke.json"
 STRATEGY_PATH = ROOT / "user_data/strategies/TraderAIProSignalStrategy.py"
 COMPOSE_PATH = ROOT / "docker-compose.yml"
 SMOKE_WORKFLOW_PATH = ROOT / ".github/workflows/backtest-smoke.yml"
+PUBLIC_DATA_SCRIPT_PATH = ROOT / "scripts/prepare_bybit_public_data.py"
+OFFLINE_BACKTEST_SCRIPT_PATH = ROOT / "scripts/run_offline_backtest.py"
 
 
 def require(condition: bool, message: str) -> None:
@@ -66,25 +68,17 @@ def validate_smoke_config() -> None:
     freqai = smoke["freqai"]
 
     require(
-        exchange.get("pair_whitelist") == ["BTC/USDT:USDT"],
-        "smoke backtest must use only BTC/USDT:USDT",
+        exchange.get("pair_whitelist") == ["SOL/USDT:USDT"],
+        "smoke backtest must use only SOL/USDT:USDT",
     )
     require("api_key" not in exchange, "smoke config must not override an exchange API key")
     require("secret" not in exchange, "smoke config must not override an exchange secret")
-    require(
-        exchange.get("ccxt_config", {}).get("hostname") == "bytick.com",
-        "smoke backtest must use Bybit's official alternate public hostname",
-    )
-    require(
-        exchange.get("ccxt_async_config", {}).get("hostname") == "bytick.com",
-        "smoke backtest async client must use Bybit's official alternate public hostname",
-    )
     require(
         freqai.get("identifier") != base["freqai"].get("identifier"),
         "smoke and signal modes must use separate model identifiers",
     )
     require(freqai.get("save_backtest_models") is False, "smoke models must not be retained")
-    require(freqai.get("train_period_days") == 7, "smoke training window must remain reproducible")
+    require(freqai.get("train_period_days") == 1, "smoke training window must remain reproducible")
     require(
         freqai["feature_parameters"].get("include_corr_pairlist") == [],
         "smoke backtest must not require additional correlation pairs",
@@ -105,9 +99,22 @@ def validate_smoke_workflow() -> None:
     workflow = SMOKE_WORKFLOW_PATH.read_text(encoding="utf-8")
     require("config.signal.json" in workflow, "smoke workflow must load the base config")
     require("config.backtest-smoke.json" in workflow, "smoke workflow must load its override")
-    require("--cache none" in workflow, "smoke workflow must disable backtest cache")
     require("validate_backtest.py" in workflow, "smoke workflow must validate its result")
     require("secrets." not in workflow, "smoke workflow must not use repository secrets")
+    require("prepare_bybit_public_data.py" in workflow, "smoke workflow must prepare Bybit data")
+    require("run_offline_backtest.py" in workflow, "smoke workflow must avoid region-gated APIs")
+
+
+def validate_public_data_path() -> None:
+    data_script = PUBLIC_DATA_SCRIPT_PATH.read_text(encoding="utf-8")
+    backtest_script = OFFLINE_BACKTEST_SCRIPT_PATH.read_text(encoding="utf-8")
+    require(
+        'PUBLIC_ROOT = "https://public.bybit.com/trading"' in data_script,
+        "smoke data must come from Bybit's public archive",
+    )
+    require("ExchangeResolver.load_exchange" in backtest_script, "offline runner must load Bybit")
+    require("validate=False" in backtest_script, "offline runner must not contact the region-gated API")
+    require('"--cache"' in backtest_script and '"none"' in backtest_script, "smoke cache must be off")
 
 
 def main() -> int:
@@ -117,6 +124,7 @@ def main() -> int:
         validate_smoke_config,
         validate_compose,
         validate_smoke_workflow,
+        validate_public_data_path,
     )
     try:
         for check in checks:

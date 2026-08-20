@@ -7,7 +7,7 @@ The signal-mode milestone is complete when all of the following checks pass on t
 | Safety | Static validation proves dry run, isolated futures, empty exchange credentials, and 1x leverage. |
 | Configuration | The official `stable_freqai` image loads the checked-in config and strategy. |
 | Unit tests | Signal, credential, Compose, smoke-config, and report-parser tests pass. |
-| Market data | CI downloads public Bybit USDT perpetual candles without private credentials. |
+| Market data | CI builds candles from Bybit's official public USDT perpetual trade archives without private credentials. |
 | FreqAI | CI trains `LightGBMRegressor` using only data available before each prediction window. |
 | Backtest | CI runs the strategy end to end and validates the exported result structure. |
 | Evidence | The workflow retains the backtest archive and `ci-summary.json` for 14 days. |

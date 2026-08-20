@@ -66,7 +66,7 @@ To run the same compact integration test used by CI:
 make smoke-backtest
 ```
 
-It downloads a fixed public Bybit futures window, trains a small FreqAI model, runs an uncached backtest, and writes `user_data/backtest_results/ci-summary.json`. The fixed window makes pipeline failures comparable; update it deliberately when Bybit no longer serves the range.
+It downloads a fixed window from Bybit's official public futures trade archive, builds Freqtrade candles, trains a small FreqAI model, runs an uncached backtest, and writes `user_data/backtest_results/ci-summary.json`. The fixed window makes pipeline failures comparable.
 
 ## Project structure
 
@@ -82,7 +82,9 @@ It downloads a fixed public Bybit futures window, trains a small FreqAI model, r
 │   └── operations.md
 ├── scripts/
 │   ├── validate.py
-│   └── validate_backtest.py
+│   ├── validate_backtest.py
+│   ├── prepare_bybit_public_data.py
+│   └── run_offline_backtest.py
 ├── tests/
 │   ├── test_backtest_report.py
 │   └── test_signal_mode.py

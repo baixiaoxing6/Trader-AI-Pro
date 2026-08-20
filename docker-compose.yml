@@ -13,6 +13,7 @@ services:
       TZ: "${TZ:-Asia/Singapore}"
     volumes:
       - ./user_data:/freqtrade/user_data
+      - ./scripts:/freqtrade/scripts:ro
     command:
       - trade
       - --logfile

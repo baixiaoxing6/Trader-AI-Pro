@@ -41,7 +41,7 @@ make smoke-backtest
 
 This uses `config.signal.json` first and `config.backtest-smoke.json` second. Freqtrade merges the files in order, so the smoke profile inherits all signal-mode safety controls while reducing the pair set, feature set, training window, and model size. It writes a validated summary to `user_data/backtest_results/ci-summary.json`.
 
-GitHub-hosted runners may be located in a region where Bybit blocks `api.bybit.com`. The smoke overlay selects Bybit's official alternate mainnet hostname, `api.bytick.com`; production signal mode keeps the standard endpoint.
+Bybit officially rejects API requests from US IP addresses, where GitHub-hosted runners may be located. The smoke job therefore downloads Bybit's public daily SOLUSDT futures trade archives and aggregates them into 5-minute and 15-minute candles. The backtest uses offline market metadata only; production signal mode keeps the normal Bybit adapter. The artifact includes source URLs, byte sizes, and SHA-256 hashes. Funding is fixed at zero for this engineering smoke test and is not a performance assumption.
 
 The smoke workflow intentionally does not require a profitable result or a minimum trade count. Its acceptance target is the full data-to-report pipeline; trading performance is a separate research decision.
 
