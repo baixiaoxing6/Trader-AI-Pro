@@ -33,6 +33,16 @@ make backtest TIMERANGE=20260101-20260701
 
 Do not assess the strategy using only aggregate profit. At minimum review trade count, long/short balance, maximum drawdown, fee/funding impact, prediction coverage, rejected predictions, and stability across multiple non-overlapping periods.
 
+Run the compact CI-equivalent integration test with:
+
+```bash
+make smoke-backtest
+```
+
+This uses `config.signal.json` first and `config.backtest-smoke.json` second. Freqtrade merges the files in order, so the smoke profile inherits all signal-mode safety controls while reducing the pair set, feature set, training window, and model size. It writes a validated summary to `user_data/backtest_results/ci-summary.json`.
+
+The smoke workflow intentionally does not require a profitable result or a minimum trade count. Its acceptance target is the full data-to-report pipeline; trading performance is a separate research decision.
+
 ## 5. Start signal mode
 
 ```bash
@@ -56,6 +66,10 @@ make down
 ```
 
 Runtime models, logs, candles, backtest results, and SQLite files remain under `user_data/` and are ignored by Git.
+
+## CI evidence
+
+The normal `CI` workflow validates syntax, invariants, tests, Compose, and official-image strategy loading. `FreqAI Backtest Smoke` additionally downloads public Bybit futures data, trains the model, runs an uncached backtest, validates its report, and retains the export plus `ci-summary.json` as a 14-day workflow artifact.
 
 ## Troubleshooting
 

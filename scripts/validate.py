@@ -11,8 +11,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "user_data/configs/config.signal.json"
+SMOKE_CONFIG_PATH = ROOT / "user_data/configs/config.backtest-smoke.json"
 STRATEGY_PATH = ROOT / "user_data/strategies/TraderAIProSignalStrategy.py"
 COMPOSE_PATH = ROOT / "docker-compose.yml"
+SMOKE_WORKFLOW_PATH = ROOT / ".github/workflows/backtest-smoke.yml"
 
 
 def require(condition: bool, message: str) -> None:
@@ -50,6 +52,31 @@ def validate_strategy() -> None:
     require("TraderAIProSignalStrategy" in classes, "strategy class is missing")
     require("self.freqai.start" in source, "strategy must invoke FreqAI")
     require("can_short = True" in source, "strategy must support short signals")
+    require("return min(1.0, max_leverage)" in source, "strategy leverage must stay capped at 1x")
+
+
+def validate_smoke_config() -> None:
+    base = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    smoke = json.loads(SMOKE_CONFIG_PATH.read_text(encoding="utf-8"))
+    exchange = smoke["exchange"]
+    freqai = smoke["freqai"]
+
+    require(
+        exchange.get("pair_whitelist") == ["BTC/USDT:USDT"],
+        "smoke backtest must use only BTC/USDT:USDT",
+    )
+    require("api_key" not in exchange, "smoke config must not override an exchange API key")
+    require("secret" not in exchange, "smoke config must not override an exchange secret")
+    require(
+        freqai.get("identifier") != base["freqai"].get("identifier"),
+        "smoke and signal modes must use separate model identifiers",
+    )
+    require(freqai.get("save_backtest_models") is False, "smoke models must not be retained")
+    require(freqai.get("train_period_days") == 7, "smoke training window must remain reproducible")
+    require(
+        freqai["feature_parameters"].get("include_corr_pairlist") == [],
+        "smoke backtest must not require additional correlation pairs",
+    )
 
 
 def validate_compose() -> None:
@@ -62,8 +89,23 @@ def validate_compose() -> None:
     require("FREQTRADE__EXCHANGE__SECRET" not in compose, "Compose must not forward exchange secrets")
 
 
+def validate_smoke_workflow() -> None:
+    workflow = SMOKE_WORKFLOW_PATH.read_text(encoding="utf-8")
+    require("config.signal.json" in workflow, "smoke workflow must load the base config")
+    require("config.backtest-smoke.json" in workflow, "smoke workflow must load its override")
+    require("--cache none" in workflow, "smoke workflow must disable backtest cache")
+    require("validate_backtest.py" in workflow, "smoke workflow must validate its result")
+    require("secrets." not in workflow, "smoke workflow must not use repository secrets")
+
+
 def main() -> int:
-    checks = (validate_config, validate_strategy, validate_compose)
+    checks = (
+        validate_config,
+        validate_strategy,
+        validate_smoke_config,
+        validate_compose,
+        validate_smoke_workflow,
+    )
     try:
         for check in checks:
             check()

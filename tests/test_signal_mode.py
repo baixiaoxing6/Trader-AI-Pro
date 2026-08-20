@@ -8,8 +8,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "user_data/configs/config.signal.json"
+SMOKE_CONFIG_PATH = ROOT / "user_data/configs/config.backtest-smoke.json"
 STRATEGY_PATH = ROOT / "user_data/strategies/TraderAIProSignalStrategy.py"
 COMPOSE_PATH = ROOT / "docker-compose.yml"
+SMOKE_WORKFLOW_PATH = ROOT / ".github/workflows/backtest-smoke.yml"
 
 
 class SignalConfigTests(unittest.TestCase):
@@ -66,6 +68,25 @@ class ComposeTests(unittest.TestCase):
         self.assertIn('FREQTRADE__DRY_RUN: "true"', compose)
         self.assertNotIn("FREQTRADE__EXCHANGE__KEY", compose)
         self.assertNotIn("FREQTRADE__EXCHANGE__SECRET", compose)
+
+
+class SmokeBacktestTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.config = json.loads(SMOKE_CONFIG_PATH.read_text(encoding="utf-8"))
+        cls.workflow = SMOKE_WORKFLOW_PATH.read_text(encoding="utf-8")
+
+    def test_smoke_config_is_small_and_credential_free(self) -> None:
+        self.assertEqual(self.config["exchange"]["pair_whitelist"], ["BTC/USDT:USDT"])
+        self.assertNotIn("api_key", self.config["exchange"])
+        self.assertNotIn("secret", self.config["exchange"])
+        self.assertFalse(self.config["freqai"]["save_backtest_models"])
+        self.assertEqual(self.config["freqai"]["feature_parameters"]["include_corr_pairlist"], [])
+
+    def test_smoke_workflow_is_uncached_and_uses_no_secrets(self) -> None:
+        self.assertIn("--cache none", self.workflow)
+        self.assertIn("validate_backtest.py", self.workflow)
+        self.assertNotIn("secrets.", self.workflow)
 
 
 if __name__ == "__main__":

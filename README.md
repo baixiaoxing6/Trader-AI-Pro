@@ -19,6 +19,7 @@ Signal mode is deliberately separate from any future execution mode. Do not reus
 - Long and short signals gated by prediction quality, trend, momentum, and volume.
 - Telegram entry/exit notifications generated from paper trades.
 - Docker Compose operations, data download, backtesting, static safety validation, and CI.
+- A reproducible end-to-end Bybit/FreqAI smoke backtest with retained result evidence.
 
 ## Quick start
 
@@ -59,19 +60,36 @@ make backtest TIMERANGE=20260101-20260701
 
 FreqAI backtests train historical models and may take significantly longer than ordinary strategy backtests.
 
+To run the same compact integration test used by CI:
+
+```bash
+make smoke-backtest
+```
+
+It downloads a fixed public Bybit futures window, trains a small FreqAI model, runs an uncached backtest, and writes `user_data/backtest_results/ci-summary.json`. The fixed window makes pipeline failures comparable; update it deliberately when Bybit no longer serves the range.
+
 ## Project structure
 
 ```text
 .
-├── .github/workflows/ci.yml
+├── .github/workflows/
+│   ├── backtest-smoke.yml
+│   └── ci.yml
 ├── docker-compose.yml
 ├── docs/
+│   ├── acceptance.md
 │   ├── architecture.md
 │   └── operations.md
-├── scripts/validate.py
-├── tests/test_signal_mode.py
+├── scripts/
+│   ├── validate.py
+│   └── validate_backtest.py
+├── tests/
+│   ├── test_backtest_report.py
+│   └── test_signal_mode.py
 └── user_data/
-    ├── configs/config.signal.json
+    ├── configs/
+    │   ├── config.backtest-smoke.json
+    │   └── config.signal.json
     └── strategies/TraderAIProSignalStrategy.py
 ```
 
@@ -81,7 +99,7 @@ FreqAI backtests train historical models and may take significantly longer than 
 - `develop`: active integration branch.
 - Future work should use short-lived `feat/*` or `fix/*` branches from `develop`.
 
-Read [architecture.md](docs/architecture.md) for component boundaries and [operations.md](docs/operations.md) for operating procedures.
+Read [acceptance.md](docs/acceptance.md) for the delivery criteria, [architecture.md](docs/architecture.md) for component boundaries, and [operations.md](docs/operations.md) for operating procedures.
 
 ## Important
 

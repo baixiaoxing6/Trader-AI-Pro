@@ -34,6 +34,8 @@ flowchart TD
 6. Strategy leverage is capped at 1x.
 7. CI fails if any of these invariants change.
 
+The compact CI profile is a later configuration overlay. It changes only pair coverage and FreqAI training cost; the base configuration still supplies Bybit futures, isolated margin, dry run, and empty credentials.
+
 ## Signal logic
 
 The baseline predicts the mean forward return over the configured label window. A prediction can create a paper entry only when:
@@ -52,10 +54,9 @@ This is a research baseline, not a tuned strategy. Thresholds are constants so t
 - `develop` integrates active work.
 - Short-lived feature branches start from `develop` and return through review.
 
-## Planned milestones
+## Delivery status
 
-1. Signal-mode bootstrap and safety tests.
-2. Walk-forward backtest harness with fee, funding, and slippage reporting.
-3. Telegram signal formatting and operational health alerts.
-4. Model/feature experiments with leakage checks and experiment IDs.
-5. Execution readiness review; live trading remains disabled until explicitly approved.
+1. **Complete:** signal-mode bootstrap, safety enforcement, strategy/config loading, and Telegram paper-trade notifications.
+2. **Complete:** deterministic end-to-end smoke backtest and machine-readable evidence artifact.
+3. **Research gate:** multi-regime walk-forward evaluation, fee/funding/slippage stress tests, and model experiments.
+4. **Explicit future decision:** execution-readiness review. Live trading remains disabled until separately approved.
