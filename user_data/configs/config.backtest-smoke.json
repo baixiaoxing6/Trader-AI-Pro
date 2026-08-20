@@ -2,6 +2,12 @@
   "$schema": "https://schema.freqtrade.io/schema.json",
   "max_open_trades": 1,
   "exchange": {
+    "ccxt_config": {
+      "hostname": "bytick.com"
+    },
+    "ccxt_async_config": {
+      "hostname": "bytick.com"
+    },
     "pair_whitelist": [
       "BTC/USDT:USDT"
     ],

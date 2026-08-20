@@ -72,6 +72,14 @@ def validate_smoke_config() -> None:
     require("api_key" not in exchange, "smoke config must not override an exchange API key")
     require("secret" not in exchange, "smoke config must not override an exchange secret")
     require(
+        exchange.get("ccxt_config", {}).get("hostname") == "bytick.com",
+        "smoke backtest must use Bybit's official alternate public hostname",
+    )
+    require(
+        exchange.get("ccxt_async_config", {}).get("hostname") == "bytick.com",
+        "smoke backtest async client must use Bybit's official alternate public hostname",
+    )
+    require(
         freqai.get("identifier") != base["freqai"].get("identifier"),
         "smoke and signal modes must use separate model identifiers",
     )

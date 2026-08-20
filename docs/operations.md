@@ -41,6 +41,8 @@ make smoke-backtest
 
 This uses `config.signal.json` first and `config.backtest-smoke.json` second. Freqtrade merges the files in order, so the smoke profile inherits all signal-mode safety controls while reducing the pair set, feature set, training window, and model size. It writes a validated summary to `user_data/backtest_results/ci-summary.json`.
 
+GitHub-hosted runners may be located in a region where Bybit blocks `api.bybit.com`. The smoke overlay selects Bybit's official alternate mainnet hostname, `api.bytick.com`; production signal mode keeps the standard endpoint.
+
 The smoke workflow intentionally does not require a profitable result or a minimum trade count. Its acceptance target is the full data-to-report pipeline; trading performance is a separate research decision.
 
 ## 5. Start signal mode

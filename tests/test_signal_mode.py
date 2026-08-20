@@ -83,6 +83,10 @@ class SmokeBacktestTests(unittest.TestCase):
         self.assertEqual(self.config["exchange"]["pair_whitelist"], ["BTC/USDT:USDT"])
         self.assertNotIn("api_key", self.config["exchange"])
         self.assertNotIn("secret", self.config["exchange"])
+        self.assertEqual(self.config["exchange"]["ccxt_config"]["hostname"], "bytick.com")
+        self.assertEqual(
+            self.config["exchange"]["ccxt_async_config"]["hostname"], "bytick.com"
+        )
         self.assertFalse(self.config["freqai"]["save_backtest_models"])
         self.assertEqual(self.config["freqai"]["feature_parameters"]["include_corr_pairlist"], [])
 
