@@ -1,0 +1,27 @@
+name: trader-ai-pro
+
+services:
+  freqtrade-signal:
+    image: ${FREQTRADE_IMAGE:-freqtradeorg/freqtrade:stable_freqai}
+    container_name: trader-ai-pro-signal
+    restart: unless-stopped
+    environment:
+      FREQTRADE__DRY_RUN: "true"
+      FREQTRADE__TELEGRAM__ENABLED: "${TELEGRAM_ENABLED:-false}"
+      FREQTRADE__TELEGRAM__TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+      FREQTRADE__TELEGRAM__CHAT_ID: "${TELEGRAM_CHAT_ID:-}"
+      TZ: "${TZ:-Asia/Singapore}"
+    volumes:
+      - ./user_data:/freqtrade/user_data
+    command:
+      - trade
+      - --logfile
+      - /freqtrade/user_data/logs/freqtrade.log
+      - --db-url
+      - sqlite:////freqtrade/user_data/tradesv3.signal.sqlite
+      - --config
+      - /freqtrade/user_data/configs/config.signal.json
+      - --strategy
+      - TraderAIProSignalStrategy
+      - --freqaimodel
+      - LightGBMRegressor
