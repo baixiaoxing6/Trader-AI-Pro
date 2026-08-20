@@ -28,7 +28,7 @@ def validate_config() -> None:
     require(config.get("trading_mode") == "futures", "trading_mode must be futures")
     require(config.get("margin_mode") == "isolated", "margin_mode must be isolated")
     require(exchange.get("name") == "bybit", "exchange must be bybit")
-    require(exchange.get("key", "") == "", "signal mode must not contain an exchange key")
+    require(exchange.get("api_key", "") == "", "signal mode must not contain an API key")
     require(exchange.get("secret", "") == "", "signal mode must not contain an exchange secret")
     require(config.get("force_entry_enable") is False, "forced entries must remain disabled")
     require(config["freqai"].get("enabled") is True, "FreqAI must be enabled")

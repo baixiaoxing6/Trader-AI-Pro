@@ -29,7 +29,7 @@ class SignalConfigTests(unittest.TestCase):
             self.assertTrue(pair.endswith("/USDT:USDT"), pair)
 
     def test_no_credentials_are_committed(self) -> None:
-        self.assertEqual(self.config["exchange"]["key"], "")
+        self.assertEqual(self.config["exchange"]["api_key"], "")
         self.assertEqual(self.config["exchange"]["secret"], "")
         self.assertEqual(self.config["telegram"]["token"], "")
         self.assertEqual(self.config["telegram"]["chat_id"], "")

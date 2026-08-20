@@ -52,7 +52,7 @@
   },
   "exchange": {
     "name": "bybit",
-    "key": "",
+    "api_key": "",
     "secret": "",
     "ccxt_config": {
       "enableRateLimit": true
