@@ -1,0 +1,81 @@
+name: Windows Launcher
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [develop]
+    paths:
+      - ".github/workflows/windows-launcher.yml"
+      - ".env.example"
+      - "docker-compose.yml"
+      - "launcher/**"
+      - "scripts/**"
+      - "user_data/configs/**"
+      - "user_data/strategies/**"
+  pull_request:
+    branches: [develop]
+    paths:
+      - ".github/workflows/windows-launcher.yml"
+      - ".env.example"
+      - "docker-compose.yml"
+      - "launcher/**"
+      - "scripts/**"
+      - "user_data/configs/**"
+      - "user_data/strategies/**"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned packager
+        run: python -m pip install pyinstaller==6.15.0
+
+      - name: Build one-file Windows launcher
+        shell: pwsh
+        run: |
+          pyinstaller `
+            --noconfirm `
+            --clean `
+            --onefile `
+            --windowed `
+            --name Trader-AI-Pro `
+            --add-data ".env.example;." `
+            --add-data "docker-compose.yml;." `
+            --add-data "scripts;scripts" `
+            --add-data "user_data/configs;user_data/configs" `
+            --add-data "user_data/strategies;user_data/strategies" `
+            launcher/trader_ai_pro_launcher.py
+
+      - name: Verify packaged resources
+        shell: pwsh
+        run: |
+          & ".\dist\Trader-AI-Pro.exe" --self-test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Generate checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash ".\dist\Trader-AI-Pro.exe" -Algorithm SHA256).Hash.ToLower()
+          "$hash  Trader-AI-Pro.exe" | Set-Content ".\dist\Trader-AI-Pro.exe.sha256" -Encoding ascii
+
+      - name: Upload Windows executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trader-AI-Pro-Windows
+          path: |
+            dist/Trader-AI-Pro.exe
+            dist/Trader-AI-Pro.exe.sha256
+          if-no-files-found: error
+          retention-days: 14
