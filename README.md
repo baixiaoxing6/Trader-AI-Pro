@@ -49,6 +49,21 @@ make down
 make up
 ```
 
+## Windows one-file launcher
+
+Windows users can download the `Trader-AI-Pro-Windows` artifact from the latest
+[`Windows Launcher`](../../actions/workflows/windows-launcher.yml) workflow run. Extract the
+artifact and open `Trader-AI-Pro.exe`. Python, Git, and GNU Make are not required for this path.
+
+Docker Desktop is still required because the launcher runs the official Freqtrade/FreqAI image.
+The first screen stores Telegram settings only in `%LOCALAPPDATA%\TraderAIPro\.env`. Click
+**一键安装并启动** to pull the image, download 90 days of Bybit candles, and start signal mode.
+The same application can stop the service, show status and logs, open the runtime directory, and
+run the complete offline smoke backtest.
+
+The executable remains a signal-only launcher: it validates `dry_run=true`, never accepts Bybit
+API credentials, and does not send real orders.
+
 ## Backtesting
 
 Download data first, then pass an explicit timerange:
