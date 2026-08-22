@@ -1,0 +1,79 @@
+name: FreqAI Backtest Smoke
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - ".github/workflows/backtest-smoke.yml"
+      - "docker-compose.yml"
+      - "scripts/**"
+      - "tests/**"
+      - "user_data/configs/**"
+      - "user_data/strategies/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/backtest-smoke.yml"
+      - "docker-compose.yml"
+      - "scripts/**"
+      - "tests/**"
+      - "user_data/configs/**"
+      - "user_data/strategies/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backtest-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pull official FreqAI image
+        run: docker compose pull freqtrade-signal
+
+      - name: Prepare writable runtime directories
+        run: chmod -R a+rwX user_data
+
+      - name: Build candles from Bybit public futures archives
+        run: >-
+          docker compose run --rm --no-deps --entrypoint python freqtrade-signal
+          /freqtrade/scripts/prepare_bybit_public_data.py
+          --symbol SOLUSDT
+          --pair SOL/USDT:USDT
+          --start 2021-07-01
+          --end 2021-07-08
+
+      - name: Train FreqAI and run smoke backtest
+        run: >-
+          docker compose run --rm --no-deps --entrypoint python freqtrade-signal
+          /freqtrade/scripts/run_offline_backtest.py
+          --config /freqtrade/user_data/configs/config.signal.json
+          --config /freqtrade/user_data/configs/config.backtest-smoke.json
+          --strategy TraderAIProSignalStrategy
+          --freqaimodel LightGBMRegressor
+          --timerange 20210705-20210707
+
+      - name: Validate backtest report
+        run: >-
+          python scripts/validate_backtest.py user_data/backtest_results
+          --strategy TraderAIProSignalStrategy
+
+      - name: Upload backtest evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: freqai-smoke-backtest-${{ github.sha }}
+          path: |
+            user_data/backtest_results/
+            user_data/data/bybit/public-source-manifest.json
+          if-no-files-found: warn
+          retention-days: 14

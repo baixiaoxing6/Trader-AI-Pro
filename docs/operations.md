@@ -1,0 +1,103 @@
+# Signal-mode operations
+
+## Windows executable
+
+Download the `Trader-AI-Pro-Windows` artifact from the latest GitHub Actions `Windows Launcher`
+run, extract it, and open `Trader-AI-Pro.exe`. Install Docker Desktop first; Python, Git, and Make
+are not required by the executable.
+
+The launcher installs its runtime files under `%LOCALAPPDATA%\TraderAIPro`, stores Telegram secrets
+only in the local `.env`, and exposes buttons for installation/start, stop, status, recent logs,
+the complete smoke test, and the runtime data directory. The application revalidates the dry-run
+safety contract before every Docker operation.
+
+## 1. Prepare environment
+
+```bash
+cp .env.example .env
+```
+
+Signal mode does not require Bybit credentials. Configure Telegram in `.env` only when notifications are required.
+
+## 2. Validate tracked configuration
+
+```bash
+make validate
+```
+
+Validation checks Python syntax, JSON syntax, Docker Compose syntax, and the dry-run safety invariants.
+
+## 3. Download historical data
+
+```bash
+make pull
+make download-data
+```
+
+The command downloads the configured Bybit perpetual pairs for the base and informative timeframes. FreqAI also updates required live data when the service starts.
+
+## 4. Run a historical test
+
+```bash
+make backtest TIMERANGE=20260101-20260701
+```
+
+Do not assess the strategy using only aggregate profit. At minimum review trade count, long/short balance, maximum drawdown, fee/funding impact, prediction coverage, rejected predictions, and stability across multiple non-overlapping periods.
+
+Run the compact CI-equivalent integration test with:
+
+```bash
+make smoke-backtest
+```
+
+This uses `config.signal.json` first and `config.backtest-smoke.json` second. Freqtrade merges the files in order, so the smoke profile inherits all signal-mode safety controls while reducing the pair set, feature set, training window, and model size. It writes a validated summary to `user_data/backtest_results/ci-summary.json`.
+
+Bybit officially rejects API requests from US IP addresses, where GitHub-hosted runners may be located. The smoke job therefore downloads Bybit's public daily SOLUSDT futures trade archives and aggregates them into 5-minute and 15-minute candles. The backtest uses offline market metadata only; production signal mode keeps the normal Bybit adapter. The artifact includes source URLs, byte sizes, and SHA-256 hashes. Funding is fixed at zero for this engineering smoke test and is not a performance assumption.
+
+The smoke workflow intentionally does not require a profitable result or a minimum trade count. Its acceptance target is the full data-to-report pipeline; trading performance is a separate research decision.
+
+## 5. Start signal mode
+
+```bash
+make up
+make logs
+```
+
+Expected startup evidence:
+
+- exchange is Bybit;
+- trading mode is futures with isolated margin;
+- dry run is enabled;
+- strategy is `TraderAIProSignalStrategy`;
+- model is `LightGBMRegressor`; and
+- FreqAI begins training or loads the matching identifier.
+
+## 6. Stop cleanly
+
+```bash
+make down
+```
+
+Runtime models, logs, candles, backtest results, and SQLite files remain under `user_data/` and are ignored by Git.
+
+## CI evidence
+
+The normal `CI` workflow validates syntax, invariants, tests, Compose, and official-image strategy loading. `FreqAI Backtest Smoke` additionally downloads public Bybit futures data, trains the model, runs an uncached backtest, validates its report, and retains the export plus `ci-summary.json` as a 14-day workflow artifact.
+
+## Troubleshooting
+
+### Telegram does not start
+
+Confirm `TELEGRAM_ENABLED=true`, then check that `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are populated in `.env`. Restart the service after changing them.
+
+### No predictions are accepted
+
+Inspect `do_predict` in backtest exports and logs. Do not simply remove the quality gate. First verify data coverage, informative timeframes, model identifier, feature NaNs, and DI threshold behavior.
+
+### Bybit pair errors
+
+USDT perpetual symbols must use the settlement suffix, for example `BTC/USDT:USDT`. Signal mode supports isolated futures only.
+
+### A live order appears possible
+
+Stop the service immediately with `make down` and run `make validate`. The checked-in signal service must not receive exchange credentials and must keep `FREQTRADE__DRY_RUN=true`.
