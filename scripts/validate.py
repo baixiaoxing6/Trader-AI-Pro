@@ -17,6 +17,8 @@ COMPOSE_PATH = ROOT / "docker-compose.yml"
 SMOKE_WORKFLOW_PATH = ROOT / ".github/workflows/backtest-smoke.yml"
 PUBLIC_DATA_SCRIPT_PATH = ROOT / "scripts/prepare_bybit_public_data.py"
 OFFLINE_BACKTEST_SCRIPT_PATH = ROOT / "scripts/run_offline_backtest.py"
+WINDOWS_LAUNCHER_PATH = ROOT / "launcher/trader_ai_pro_launcher.py"
+WINDOWS_WORKFLOW_PATH = ROOT / ".github/workflows/windows-launcher.yml"
 
 
 def require(condition: bool, message: str) -> None:
@@ -117,6 +119,19 @@ def validate_public_data_path() -> None:
     require('"--cache"' in backtest_script and '"none"' in backtest_script, "smoke cache must be off")
 
 
+def validate_windows_launcher() -> None:
+    launcher = WINDOWS_LAUNCHER_PATH.read_text(encoding="utf-8")
+    workflow = WINDOWS_WORKFLOW_PATH.read_text(encoding="utf-8")
+    ast.parse(launcher, filename=str(WINDOWS_LAUNCHER_PATH))
+    require("validate_signal_config" in launcher, "Windows launcher must validate signal safety")
+    require("FREQTRADE__DRY_RUN" in launcher, "Windows launcher must verify forced dry-run")
+    require("FREQTRADE__EXCHANGE__KEY" in launcher, "Windows launcher must reject exchange keys")
+    require("--onefile" in workflow, "Windows workflow must produce a one-file executable")
+    require("--self-test" in workflow, "Windows workflow must test the packaged executable")
+    require("actions/upload-artifact@v4" in workflow, "Windows executable must be retained")
+    require("secrets." not in workflow, "Windows build must not use repository secrets")
+
+
 def main() -> int:
     checks = (
         validate_config,
@@ -125,6 +140,7 @@ def main() -> int:
         validate_compose,
         validate_smoke_workflow,
         validate_public_data_path,
+        validate_windows_launcher,
     )
     try:
         for check in checks:

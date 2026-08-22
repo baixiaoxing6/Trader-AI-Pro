@@ -1,5 +1,16 @@
 # Signal-mode operations
 
+## Windows executable
+
+Download the `Trader-AI-Pro-Windows` artifact from the latest GitHub Actions `Windows Launcher`
+run, extract it, and open `Trader-AI-Pro.exe`. Install Docker Desktop first; Python, Git, and Make
+are not required by the executable.
+
+The launcher installs its runtime files under `%LOCALAPPDATA%\TraderAIPro`, stores Telegram secrets
+only in the local `.env`, and exposes buttons for installation/start, stop, status, recent logs,
+the complete smoke test, and the runtime data directory. The application revalidates the dry-run
+safety contract before every Docker operation.
+
 ## 1. Prepare environment
 
 ```bash
